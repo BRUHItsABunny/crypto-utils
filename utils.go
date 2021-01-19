@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"github.com/OneOfOne/xxhash"
 	"golang.org/x/crypto/curve25519"
-	"io"
 )
 
 type KeyData struct {
@@ -61,6 +60,14 @@ func SHA256hash(args ...[]byte) []byte {
 	return digester.Sum(nil)
 }
 
+func SHA1hash(args ...[]byte) []byte {
+	digester := sha1.New()
+	for _, msgBytes := range args {
+		digester.Write(msgBytes)
+	}
+	return digester.Sum(nil)
+}
+
 func GenerateCurve255519KeyData() (KeyData, error) {
 	result := KeyData{}
 	result.PrivateKey = make([]byte, 32)
@@ -93,15 +100,25 @@ func AesCBCEncrypt(rawData, key, iv []byte) ([]byte, error) {
 	// Initial vector IV must be unique, but does not need to be kept secret
 	cipherText := make([]byte, blockSize+len(rawData))
 	//block size 16
-	// iv := cipherText[:blockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		panic(err)
-	}
-
 	//block size and initial vector size must be the same
 	mode := cipher.NewCBCEncrypter(block, iv)
 	///mode.CryptBlocks(cipherText[blockSize:],rawData)
 	mode.CryptBlocks(cipherText, rawData)
+
+	return cipherText, nil
+}
+
+func AesCTREncrypt(rawData, key, iv []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+
+	cipherText := make([]byte, len(rawData))
+	//block size and initial vector size must be the same
+	mode := cipher.NewCTR(block, iv)
+	///mode.CryptBlocks(cipherText[blockSize:],rawData)
+	mode.XORKeyStream(cipherText, rawData)
 
 	return cipherText, nil
 }
