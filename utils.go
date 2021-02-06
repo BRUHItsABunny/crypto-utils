@@ -100,6 +100,7 @@ func AesCBCEncrypt(rawData, key, iv []byte) ([]byte, error) {
 	// Initial vector IV must be unique, but does not need to be kept secret
 	cipherText := make([]byte, blockSize+len(rawData))
 	//block size 16
+
 	//block size and initial vector size must be the same
 	mode := cipher.NewCBCEncrypter(block, iv)
 	///mode.CryptBlocks(cipherText[blockSize:],rawData)
