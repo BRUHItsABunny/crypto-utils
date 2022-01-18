@@ -5,6 +5,31 @@ import (
 	"crypto/cipher"
 )
 
+func AesECBEncrypt(padding PaddingFunc, rawData, key []byte) ([]byte, error) {
+	var (
+		block      cipher.Block
+		cipherText []byte
+		err        error
+	)
+
+	block, err = aes.NewCipher(key)
+	if err == nil {
+		blockSize := block.BlockSize()
+		rawData = padding(rawData, blockSize)
+		result := make([]byte, len(rawData))
+
+		temp := result
+		for len(rawData) > 0 {
+			block.Encrypt(temp, rawData[:blockSize])
+			rawData = rawData[blockSize:]
+			temp = temp[blockSize:]
+		}
+		cipherText = result
+	}
+
+	return cipherText, err
+}
+
 func AesCBCEncrypt(padding PaddingFunc, rawData, key, iv []byte) ([]byte, error) {
 	var (
 		block      cipher.Block
@@ -73,6 +98,26 @@ func AesGCMEncrypt(padding PaddingFunc, rawData, key, iv, aad []byte) ([]byte, e
 	}
 
 	return cipherText, err
+}
+
+func AesECBDecrypt(unPadder UnPaddingFunc, encryptData, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	blockSize := block.BlockSize()
+	result := make([]byte, len(encryptData))
+
+	temp := result
+	for len(encryptData) > 0 {
+		block.Decrypt(temp, encryptData[:blockSize])
+		encryptData = encryptData[blockSize:]
+		temp = temp[blockSize:]
+	}
+
+	result = unPadder(result)
+	return result, nil
 }
 
 func AesCBCDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte, error) {

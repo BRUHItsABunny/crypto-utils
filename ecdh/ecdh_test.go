@@ -8,6 +8,7 @@ import (
 
 var (
 	// This key pair is not valid as the public key does NOT belong to this private key
+	// SRC: Java
 	testJSON = []byte("{\"private_key\":\"wAycgPF0rjQC9IvR2hXWLN+O3ZG4chAlKj+ZE3ilI10=\",\"public_key\":\"WvnLAyQ5nqQFp6lfuGKc2U0vowyzcqHkJirnpN18ADI=\"}")
 )
 
