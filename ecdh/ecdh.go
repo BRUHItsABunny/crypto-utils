@@ -68,6 +68,12 @@ type ECDH interface {
 
 var ErrConvertUnable = errors.New("unable to convert key to byte array")
 
+func CryptoKeyFromBase64(keyStr string) ([32]byte, error) {
+	var key [32]byte
+	_, err := base64.StdEncoding.Decode(key[:], []byte(keyStr))
+	return key, err
+}
+
 func cryptoToByteArray(dst *[32]byte, src interface{}) error {
 	var err error
 
