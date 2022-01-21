@@ -74,6 +74,24 @@ func CryptoKeyFromBase64(keyStr string) ([32]byte, error) {
 	return key, err
 }
 
+func CryptoKeyToBase64(key interface{}) (string, error) {
+	var keyBytes [32]byte
+	err := cryptoToByteArray(&keyBytes, key)
+	if err == nil {
+		return base64.StdEncoding.EncodeToString(keyBytes[:]), nil
+	}
+	return "", err
+}
+
+func CryptoKeyToBytes(key interface{}) ([]byte, error) {
+	var keyBytes [32]byte
+	err := cryptoToByteArray(&keyBytes, key)
+	if err == nil {
+		return keyBytes[:], nil
+	}
+	return nil, err
+}
+
 func cryptoToByteArray(dst *[32]byte, src interface{}) error {
 	var err error
 

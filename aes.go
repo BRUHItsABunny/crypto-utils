@@ -43,7 +43,7 @@ func AesCBCEncrypt(padding PaddingFunc, rawData, key, iv []byte) ([]byte, error)
 		blockSize := block.BlockSize()
 		rawData = padding(rawData, blockSize)
 		// Initial vector IV must be unique, but does not need to be kept secret
-		cipherText = make([]byte, blockSize+len(rawData))
+		cipherText = make([]byte, len(rawData))
 		//block size 16
 
 		//block size and initial vector size must be the same
