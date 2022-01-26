@@ -2,6 +2,7 @@ package crypto_utils
 
 import (
 	"bytes"
+	"fmt"
 )
 
 type PaddingFunc func(data []byte, blockSize int) []byte
@@ -24,6 +25,7 @@ func NoPadding(cipherText []byte, blockSize int) []byte {
 }
 
 func PKCS7UnPadding(origData []byte) []byte {
+	fmt.Println(origData)
 	length := len(origData)
 	unpadding := int(origData[length-1])
 	return origData[:(length - unpadding)]

@@ -34,3 +34,28 @@ func TestAesECBCrypto(t *testing.T) {
 	fmt.Println(base64.StdEncoding.EncodeToString(data))
 	fmt.Println(base64.StdEncoding.EncodeToString(data2))
 }
+
+func TestAesCBCDecrypt(t *testing.T) {
+	key, err := base64.StdEncoding.DecodeString("D3W+fwkwLpPjePQp+VPrRbQZsuQXlwrxMIJtmIssGig=")
+	if err != nil {
+		t.Error(err)
+	}
+	IV, err := base64.StdEncoding.DecodeString("raRw6/OKlPDgHRMwZQ2f9w==")
+	if err != nil {
+		t.Error(err)
+	}
+	data, err := base64.StdEncoding.DecodeString("S5hGFVN6PbGw+pxY7SZ7ko06Nc5ksSs4EKdcDQW3VgI=")
+	if err != nil {
+		t.Error(err)
+	}
+	expected := "{\"text\":\"this is v1\"}"
+
+	result, err := AesCBCDecrypt(PKCS5UnPadding, data, key, IV)
+	if err != nil {
+		t.Error(err)
+	}
+	if string(result) != expected {
+		fmt.Println(string(result))
+		t.Error("result != expected")
+	}
+}

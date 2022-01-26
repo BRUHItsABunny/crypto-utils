@@ -132,7 +132,7 @@ func AesCBCDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte,
 		return nil, ErrTextBlockSizeTooSmall
 	}
 	// iv := encryptData[:blockSize]
-	encryptData = encryptData[blockSize:]
+	// encryptData = encryptData[blockSize:]
 
 	// CBC mode always works in whole blocks.
 	if len(encryptData)%blockSize != 0 {
@@ -142,10 +142,11 @@ func AesCBCDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte,
 	mode := cipher.NewCBCDecrypter(block, iv)
 
 	// CryptBlocks can work in-place if the two arguments are the same.
-	mode.CryptBlocks(encryptData, encryptData)
+	data := make([]byte, len(encryptData))
+	mode.CryptBlocks(data, encryptData)
 	// Unfill
-	encryptData = unPadder(encryptData)
-	return encryptData, nil
+	data = unPadder(data)
+	return data, nil
 }
 
 func AesCTRDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte, error) {
@@ -160,7 +161,7 @@ func AesCTRDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte,
 		return nil, ErrTextBlockSizeTooSmall
 	}
 	// iv := encryptData[:blockSize]
-	encryptData = encryptData[blockSize:]
+	// encryptData = encryptData[blockSize:]
 
 	if len(encryptData)%blockSize != 0 {
 		return nil, ErrTextBlockSizeNotMultiple
@@ -190,10 +191,10 @@ func AesGCMDecrypt(unPadder UnPaddingFunc, cipherText, key, iv, aad []byte) ([]b
 			err = ErrTextBlockSizeTooSmall
 		}
 		if err == nil {
-			cipherText = cipherText[blockSize:]
-			if len(cipherText)%blockSize != 0 {
-				err = ErrTextBlockSizeNotMultiple
-			}
+			// cipherText = cipherText[blockSize:]
+			// if len(cipherText)%blockSize != 0 {
+			// 	err = ErrTextBlockSizeNotMultiple
+			// }
 			if err == nil {
 				mode, err = cipher.NewGCM(block)
 
