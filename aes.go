@@ -3,9 +3,10 @@ package crypto_utils
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"github.com/BRUHItsABunny/crypto-utils/padding"
 )
 
-func AesECBEncrypt(padding PaddingFunc, rawData, key []byte) ([]byte, error) {
+func AesECBEncrypt(padding padding.Padding, rawData, key []byte) ([]byte, error) {
 	var (
 		block      cipher.Block
 		cipherText []byte
@@ -15,22 +16,24 @@ func AesECBEncrypt(padding PaddingFunc, rawData, key []byte) ([]byte, error) {
 	block, err = aes.NewCipher(key)
 	if err == nil {
 		blockSize := block.BlockSize()
-		rawData = padding(rawData, blockSize)
-		result := make([]byte, len(rawData))
+		rawData, err = padding.Pad(rawData, blockSize)
+		if err == nil {
 
-		temp := result
-		for len(rawData) > 0 {
-			block.Encrypt(temp, rawData[:blockSize])
-			rawData = rawData[blockSize:]
-			temp = temp[blockSize:]
+			result := make([]byte, len(rawData))
+			temp := result
+			for len(rawData) > 0 {
+				block.Encrypt(temp, rawData[:blockSize])
+				rawData = rawData[blockSize:]
+				temp = temp[blockSize:]
+			}
+			cipherText = result
 		}
-		cipherText = result
 	}
 
 	return cipherText, err
 }
 
-func AesCBCEncrypt(padding PaddingFunc, rawData, key, iv []byte) ([]byte, error) {
+func AesCBCEncrypt(padding padding.Padding, rawData, key, iv []byte) ([]byte, error) {
 	var (
 		block      cipher.Block
 		cipherText []byte
@@ -41,21 +44,19 @@ func AesCBCEncrypt(padding PaddingFunc, rawData, key, iv []byte) ([]byte, error)
 	if err == nil {
 		//fill the original
 		blockSize := block.BlockSize()
-		rawData = padding(rawData, blockSize)
-		// Initial vector IV must be unique, but does not need to be kept secret
-		cipherText = make([]byte, len(rawData))
-		//block size 16
-
-		//block size and initial vector size must be the same
-		mode := cipher.NewCBCEncrypter(block, iv)
-		///mode.CryptBlocks(cipherText[blockSize:],rawData)
-		mode.CryptBlocks(cipherText, rawData)
+		rawData, err = padding.Pad(rawData, blockSize)
+		if err == nil {
+			cipherText = make([]byte, len(rawData))
+			//block size and initial vector size must be the same
+			mode := cipher.NewCBCEncrypter(block, iv)
+			mode.CryptBlocks(cipherText, rawData)
+		}
 	}
 
 	return cipherText, err
 }
 
-func AesCTREncrypt(padding PaddingFunc, rawData, key, iv []byte) ([]byte, error) {
+func AesCTREncrypt(padding padding.Padding, rawData, key, iv []byte) ([]byte, error) {
 	var (
 		block      cipher.Block
 		cipherText []byte
@@ -65,19 +66,19 @@ func AesCTREncrypt(padding PaddingFunc, rawData, key, iv []byte) ([]byte, error)
 	block, err = aes.NewCipher(key)
 	if err == nil {
 		blockSize := block.BlockSize()
-		rawData = padding(rawData, blockSize)
-
-		cipherText = make([]byte, len(rawData))
-		//block size and initial vector size must be the same
-		mode := cipher.NewCTR(block, iv)
-		///mode.CryptBlocks(cipherText[blockSize:],rawData)
-		mode.XORKeyStream(cipherText, rawData)
+		rawData, err = padding.Pad(rawData, blockSize)
+		if err == nil {
+			cipherText = make([]byte, len(rawData))
+			//block size and initial vector size must be the same
+			mode := cipher.NewCTR(block, iv)
+			mode.XORKeyStream(cipherText, rawData)
+		}
 	}
 
 	return cipherText, err
 }
 
-func AesGCMEncrypt(padding PaddingFunc, rawData, key, iv, aad []byte) ([]byte, error) {
+func AesGCMEncrypt(padding padding.Padding, rawData, key, iv, aad []byte) ([]byte, error) {
 	var (
 		block      cipher.Block
 		mode       cipher.AEAD
@@ -88,19 +89,20 @@ func AesGCMEncrypt(padding PaddingFunc, rawData, key, iv, aad []byte) ([]byte, e
 	block, err = aes.NewCipher(key)
 	if err == nil {
 		blockSize := block.BlockSize()
-		rawData = padding(rawData, blockSize)
-
-		cipherText = make([]byte, len(rawData))
-		mode, err = cipher.NewGCM(block)
+		rawData, err = padding.Pad(rawData, blockSize)
 		if err == nil {
-			cipherText = mode.Seal(nil, iv, rawData, aad)
+			cipherText = make([]byte, len(rawData))
+			mode, err = cipher.NewGCM(block)
+			if err == nil {
+				cipherText = mode.Seal(nil, iv, rawData, aad)
+			}
 		}
 	}
 
 	return cipherText, err
 }
 
-func AesECBDecrypt(unPadder UnPaddingFunc, encryptData, key []byte) ([]byte, error) {
+func AesECBDecrypt(padding padding.Padding, encryptData, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -116,11 +118,11 @@ func AesECBDecrypt(unPadder UnPaddingFunc, encryptData, key []byte) ([]byte, err
 		temp = temp[blockSize:]
 	}
 
-	result = unPadder(result)
-	return result, nil
+	result, err = padding.Trim(result, blockSize)
+	return result, err
 }
 
-func AesCBCDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte, error) {
+func AesCBCDecrypt(padding padding.Padding, encryptData, key, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -131,8 +133,6 @@ func AesCBCDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte,
 	if len(encryptData) < blockSize {
 		return nil, ErrTextBlockSizeTooSmall
 	}
-	// iv := encryptData[:blockSize]
-	// encryptData = encryptData[blockSize:]
 
 	// CBC mode always works in whole blocks.
 	if len(encryptData)%blockSize != 0 {
@@ -140,16 +140,15 @@ func AesCBCDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte,
 	}
 
 	mode := cipher.NewCBCDecrypter(block, iv)
-
-	// CryptBlocks can work in-place if the two arguments are the same.
 	data := make([]byte, len(encryptData))
 	mode.CryptBlocks(data, encryptData)
-	// Unfill
-	data = unPadder(data)
-	return data, nil
+
+	// Trim data
+	data, err = padding.Trim(data, blockSize)
+	return data, err
 }
 
-func AesCTRDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte, error) {
+func AesCTRDecrypt(padding padding.Padding, encryptData, key, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -160,8 +159,6 @@ func AesCTRDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte,
 	if len(encryptData) < blockSize {
 		return nil, ErrTextBlockSizeTooSmall
 	}
-	// iv := encryptData[:blockSize]
-	// encryptData = encryptData[blockSize:]
 
 	if len(encryptData)%blockSize != 0 {
 		return nil, ErrTextBlockSizeNotMultiple
@@ -171,12 +168,12 @@ func AesCTRDecrypt(unPadder UnPaddingFunc, encryptData, key, iv []byte) ([]byte,
 
 	// CryptBlocks can work in-place if the two arguments are the same.
 	mode.XORKeyStream(encryptData, encryptData)
-	// Unfill
-	encryptData = unPadder(encryptData)
-	return encryptData, nil
+	// Trim data
+	encryptData, err = padding.Trim(encryptData, blockSize)
+	return encryptData, err
 }
 
-func AesGCMDecrypt(unPadder UnPaddingFunc, cipherText, key, iv, aad []byte) ([]byte, error) {
+func AesGCMDecrypt(padding padding.Padding, cipherText, key, iv, aad []byte) ([]byte, error) {
 	var (
 		block        cipher.Block
 		mode         cipher.AEAD
@@ -201,7 +198,7 @@ func AesGCMDecrypt(unPadder UnPaddingFunc, cipherText, key, iv, aad []byte) ([]b
 				if err == nil {
 					decipherText, err = mode.Open(nil, iv, cipherText, aad)
 					if err == nil {
-						decipherText = unPadder(decipherText)
+						decipherText, err = padding.Trim(decipherText, blockSize)
 					}
 				}
 			}
