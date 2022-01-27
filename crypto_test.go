@@ -18,17 +18,16 @@ func TestAesECBCrypto(t *testing.T) {
 		t.Error(err)
 	}
 
-	paddingAlgo := &padding.PKCS7Padding{}
 	data := []byte("TestData")
 
-	encData, err := AesECBEncrypt(paddingAlgo, data, key)
+	encData, err := AesECBEncrypt(padding.SupportedPaddings["pkcs7"], data, key)
 	if err != nil {
 		t.Error(err)
 	}
 
 	fmt.Println(base64.StdEncoding.EncodeToString(encData))
 
-	data2, err := AesECBDecrypt(paddingAlgo, encData, key)
+	data2, err := AesECBDecrypt(padding.SupportedPaddings["pkcs7"], encData, key)
 	if err != nil {
 		t.Error(err)
 	}
@@ -51,9 +50,8 @@ func TestAesCBCDecrypt(t *testing.T) {
 		t.Error(err)
 	}
 	expected := "{\"text\":\"this is v1\"}"
-	paddingAlgo := &padding.PKCS7Padding{}
 
-	result, err := AesCBCDecrypt(paddingAlgo, data, key, IV)
+	result, err := AesCBCDecrypt(padding.SupportedPaddings["pkcs7"], data, key, IV)
 	if err != nil {
 		t.Error(err)
 	}

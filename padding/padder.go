@@ -1,5 +1,7 @@
 package padding
 
+import "strings"
+
 type Padding interface {
 	// Pad Pads data
 	Pad([]byte, int) ([]byte, error)
@@ -10,12 +12,14 @@ type Padding interface {
 }
 
 var SupportedPaddings = map[string]Padding{
-	"none":  &NoPadding{},
-	"pkcs5": &PKCS5Padding{},
-	"pkcs7": &PKCS7Padding{},
+	strings.ToLower(defaultNoPadding.Name()):    defaultNoPadding,
+	strings.ToLower(defaultPKCS5Padding.Name()): defaultPKCS5Padding,
+	strings.ToLower(defaultPKCS7Padding.Name()): defaultPKCS7Padding,
 }
 
 type NoPadding struct{}
+
+var defaultNoPadding = &NoPadding{}
 
 func (p *NoPadding) Pad(data []byte, blockSize int) ([]byte, error) {
 	return data, nil

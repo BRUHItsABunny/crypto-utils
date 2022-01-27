@@ -4,6 +4,8 @@ import "bytes"
 
 type PKCS7Padding struct{}
 
+var defaultPKCS7Padding = &PKCS7Padding{}
+
 func (p *PKCS7Padding) Pad(data []byte, blockSize int) ([]byte, error) {
 	padding := blockSize - len(data)%blockSize
 	return append(data, bytes.Repeat([]byte{byte(padding)}, padding)...), nil
